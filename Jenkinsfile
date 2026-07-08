@@ -12,6 +12,7 @@ pipeline {
         APP_NAME = 'jenkins-demo'
         // Short git SHA makes a handy, unique build/version tag.
         BUILD_VERSION = "${env.BUILD_NUMBER}-${GIT_COMMIT.take(7)}"
+        CI = 'true'
     }
 
     stages {
@@ -22,26 +23,39 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Install') {
             steps {
-                echo 'Building the application...'
-                // Replace with your real build command, e.g.:
-                // sh 'make build'  or  sh './gradlew assemble'
+                echo 'Installing dependencies...'
+                // Use a clean, reproducible install from package-lock.json.
+                sh 'npm ci'
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                echo 'Linting...'
+                sh 'npm run lint --if-present'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // Replace with your real test command, e.g.:
-                // sh 'make test'  or  sh './gradlew test'
+                sh 'npm test'
             }
             post {
                 always {
-                    // Publish JUnit-style results if your test tool produces them.
-                    // junit 'build/test-results/**/*.xml'
-                    echo 'Test stage complete.'
+                    // Publish JUnit-style results if your test tool produces them,
+                    // e.g. jest-junit writing to junit.xml.
+                    junit testResults: 'junit.xml', allowEmptyResults: true
                 }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                sh 'npm run build --if-present'
             }
         }
 
@@ -51,7 +65,7 @@ pipeline {
             }
             steps {
                 echo "Deploying ${APP_NAME} ${BUILD_VERSION}..."
-                // Replace with your real deploy command.
+                // Replace with your real deploy command, e.g. a script or CD trigger.
             }
         }
     }
