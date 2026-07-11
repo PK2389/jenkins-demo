@@ -11,7 +11,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Building AWS Application...'
+                echo 'Building Production AWS Application...'
             }
         }
 
